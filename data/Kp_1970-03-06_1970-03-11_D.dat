@@ -1,0 +1,84 @@
+ Format                 IAGA-2002                                    |
+ Source of Data         GFZ, Helmholtz-Zentrum Postdam, Germany      |
+ Station Name           Kp index                                     |
+ IAGA CODE              Kp                                           |
+ Geodetic Latitude                                                   |
+ Geodetic Longitude                                                  |
+ Elevation                                                           |
+ Reported               Kp, ap, Ap, Cp, C9 and related values        |
+ Sensor Orientation                                                  |
+ Digital Sampling                                                    |
+ Data Interval Type     3-hours                                      |
+ Data Type              Definitive                                   |
+ # Converted to IAGA2002 format by the International Service of      |
+ #  Geomagnetic indices (ISGI, http://isgi.unistra.fr).              |
+ # The values in the raw of 00:00:00.000 are the mean values         |
+ #  between 00:00UT and 03:00UT, etc.                                |
+ # Kp: Planetary three-hour-range index                              |
+ #     Expressed in a scale of thirds, it ranges from Oo to 9o       |
+ # ap: represents a Kp-value converted back to a linear scale in nT  |
+ #     It ranges from 0 to 400 nT                                    |
+ # Ap: arithmetic mean of the day's eight ap values, unit 1 nT       |
+ # Cp: Planetary daily character figure                              |
+ #     It ranges from 0(quiet) to 2.5 (disturbed) in steps of 0.1    |
+ # C9: Conversion of the 0 to 2.5 range of Cp index to one digit     |
+ #     between 0 and 9                                               |
+ # BSRN: Bartels solar rotation number - a sequence of 27-day        |
+ #     intervals counted continuously from February 8, 1832          |
+ # NdB: Number of day within the Bartels 27-day cycle                |
+ #                                                                   |
+ # License: CC BY                                                    |
+ #          https://creativecommons.org/licenses/by/4.0/             |
+ #                                                                   |
+ # For more information on Kp and related indices, please visit      |
+ #  GFZ "Indices of Global Geomagnetic Activity" service website:    |
+ #  http://www.gfz-potsdam.de/Kp-index/                              |
+DATE       TIME         DOY Kp  ap    Ap  Cp C9  BSRN  NdB           |
+1970-03-06 00:00:00.000 065 4o  27    25 1.2  6  1868   22
+1970-03-06 03:00:00.000 065 3o  15    25 1.2  6  1868   22
+1970-03-06 06:00:00.000 065 3o  15    25 1.2  6  1868   22
+1970-03-06 09:00:00.000 065 4-  22    25 1.2  6  1868   22
+1970-03-06 12:00:00.000 065 2o   7    25 1.2  6  1868   22
+1970-03-06 15:00:00.000 065 3+  18    25 1.2  6  1868   22
+1970-03-06 18:00:00.000 065 4o  27    25 1.2  6  1868   22
+1970-03-06 21:00:00.000 065 6-  67    25 1.2  6  1868   22
+1970-03-07 00:00:00.000 066 5+  56    42 1.5  7  1868   23
+1970-03-07 03:00:00.000 066 4+  32    42 1.5  7  1868   23
+1970-03-07 06:00:00.000 066 3o  15    42 1.5  7  1868   23
+1970-03-07 09:00:00.000 066 4o  27    42 1.5  7  1868   23
+1970-03-07 12:00:00.000 066 4+  32    42 1.5  7  1868   23
+1970-03-07 15:00:00.000 066 5-  39    42 1.5  7  1868   23
+1970-03-07 18:00:00.000 066 6-  67    42 1.5  7  1868   23
+1970-03-07 21:00:00.000 066 6-  67    42 1.5  7  1868   23
+1970-03-08 00:00:00.000 067 4+  32   149 2.0  9  1868   24
+1970-03-08 03:00:00.000 067 5o  48   149 2.0  9  1868   24
+1970-03-08 06:00:00.000 067 6-  67   149 2.0  9  1868   24
+1970-03-08 09:00:00.000 067 5o  48   149 2.0  9  1868   24
+1970-03-08 12:00:00.000 067 7+ 154   149 2.0  9  1868   24
+1970-03-08 15:00:00.000 067 8o 207   149 2.0  9  1868   24
+1970-03-08 18:00:00.000 067 9o 400   149 2.0  9  1868   24
+1970-03-08 21:00:00.000 067 8+ 236   149 2.0  9  1868   24
+1970-03-09 00:00:00.000 068 6+  94    47 1.5  7  1868   25
+1970-03-09 03:00:00.000 068 6+  94    47 1.5  7  1868   25
+1970-03-09 06:00:00.000 068 2+   9    47 1.5  7  1868   25
+1970-03-09 09:00:00.000 068 3+  18    47 1.5  7  1868   25
+1970-03-09 12:00:00.000 068 4+  32    47 1.5  7  1868   25
+1970-03-09 15:00:00.000 068 6o  80    47 1.5  7  1868   25
+1970-03-09 18:00:00.000 068 4-  22    47 1.5  7  1868   25
+1970-03-09 21:00:00.000 068 4o  27    47 1.5  7  1868   25
+1970-03-10 00:00:00.000 069 3+  18     7 0.3  1  1868   26
+1970-03-10 03:00:00.000 069 1+   5     7 0.3  1  1868   26
+1970-03-10 06:00:00.000 069 1+   5     7 0.3  1  1868   26
+1970-03-10 09:00:00.000 069 2-   6     7 0.3  1  1868   26
+1970-03-10 12:00:00.000 069 1o   4     7 0.3  1  1868   26
+1970-03-10 15:00:00.000 069 1+   5     7 0.3  1  1868   26
+1970-03-10 18:00:00.000 069 2-   6     7 0.3  1  1868   26
+1970-03-10 21:00:00.000 069 1o   4     7 0.3  1  1868   26
+1970-03-11 00:00:00.000 070 1-   3     3 0.1  0  1868   27
+1970-03-11 03:00:00.000 070 0+   2     3 0.1  0  1868   27
+1970-03-11 06:00:00.000 070 0+   2     3 0.1  0  1868   27
+1970-03-11 09:00:00.000 070 0o   0     3 0.1  0  1868   27
+1970-03-11 12:00:00.000 070 0+   2     3 0.1  0  1868   27
+1970-03-11 15:00:00.000 070 1-   3     3 0.1  0  1868   27
+1970-03-11 18:00:00.000 070 1+   5     3 0.1  0  1868   27
+1970-03-11 21:00:00.000 070 2-   6     3 0.1  0  1868   27
