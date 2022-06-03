@@ -31,7 +31,7 @@ import matplotlib.colors as mcolors
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from scipy.interpolate import griddata
 from tools import *
-from sun_position import fill_dark_side
+from sun_position import fill_dark_side, sun_pos
 
 from settings import RESULT_DIR
 class SWORD():
@@ -173,7 +173,7 @@ class SWORD():
                 Z = np.array(sw_set[4])"""
             #   time ticks
             #str_ticks = [decode_dt_param(d + 'T' + t).strftime('%c') for d, t in zip(date_list, time_list)]
-            str_ticks = time_list
+            str_ticks = [decode_str_dt_param(date + 'T' + time).strftime('%H:%M:%S') for date, time in zip(date_list, time_list)]
             date_ticks = np.array([[x, label] for x, label in zip(np.arange(len(time_list)), str_ticks)])
             host.plot(np.arange(len(time_list)), value, c='r', label=label)
 
@@ -188,9 +188,11 @@ class SWORD():
                 dt = decode_str_dt_param(date_list[i] + 'T' + time_list[i])
                 lon = pos[i, 1]
                 solar_lon = get_solar_coord(dt, lon)
+                solar_lat, solar_lon = sun_pos(dt)
                 #solar_lt = np.rint(solar_lon/15)
                 lt = get_local_time(dt, lon)
-                solarcoord_pos.append('%sh %.1f'%(lt.hour, solar_lon))
+                #solarcoord_pos.append('%sh %.1f'%(lt.hour, solar_lon))
+                solarcoord_pos.append('%s %.1f'%(lt.strftime('%H:%M:%S'), 90.-solar_lat))
             coord_pos = np.array([str(lat) + ' ' + str(lon) for lat, lon in np.round(np.array(pos[:, :2]).astype(float), 2)])
 
             #pos_ticks = np.array([[x, y_label] for x, y_label in zip(np.arange(len(time_list)), coord_pos)])
@@ -208,9 +210,9 @@ class SWORD():
             points_time = np.array([decode_str_dt_param(d + 'T' + t) for d, t in zip(date_list, time_list)], dtype='datetime64')
 
             if len(date_ticks) >= 12:
-
+                tick_count = 9
                 if points_time[-1]-points_time[0] < np.timedelta64(1, 'h'):     # отрисовка vlines раз в минуту
-                    coord_ticks_arange = np.arange(0, len(coord_ticks), int(len(coord_ticks) / 14))  # top xlabels tick
+                    coord_ticks_arange = np.arange(0, len(coord_ticks), int(len(coord_ticks) / tick_count))  # top xlabels tick
                     last_point = points_time[0]
                     line_idx = []
                     for k, point_time in enumerate(points_time):
@@ -222,9 +224,10 @@ class SWORD():
                             last_point = point_time
                             line_idx.append(k)
                     date_ticks = date_ticks[line_idx]
-                    host.vlines(x=line_idx, ymin=np.min(value), ymax=np.max(value), color='b', linestyle='--', alpha=.5)
+                    nonnan_value = [x for x in value if not np.isnan(x)]
+                    host.vlines(x=line_idx, ymin=np.min(nonnan_value), ymax=np.max(nonnan_value), color='b', linestyle='--', alpha=.5, linewidths=1)
                 else:
-                    coord_ticks_arange = np.arange(0, len(coord_ticks), int(len(coord_ticks) / 14))  # top xlabels tick
+                    coord_ticks_arange = np.arange(0, len(coord_ticks), int(len(coord_ticks) / tick_count))  # top xlabels tick
                     date_ticks = date_ticks[coord_ticks_arange]
 
             else:
@@ -249,7 +252,7 @@ class SWORD():
             ax2.set_xticks(coordtick_locations[coord_ticks_arange])
             ax2.set_xticklabels(coord_ticks[coord_ticks_arange])
             ax2.tick_params(axis='x', labelsize=8)
-            ax2.annotate("LT sunLon\n\nLat Lon", xy=(-0.025, 1.037), xycoords=ax2.transAxes, size=8)
+            ax2.annotate("LT sunColat\n\nLat Lon", xy=(-0.03, 1.037), xycoords=ax2.transAxes, size=8)
 
 
             #https://stackoverflow.com/questions/20532614/multiple-lines-of-x-tick-labels-in-matplotlib
@@ -350,7 +353,6 @@ class SWORD():
 
         print('scatter min:%s scatter max:%s' % (np.min(values), np.max(values)), )
 
-        #TODO
         #nonnan_values = np.array([x for x in values if not pd.isnull(x)])
         nonnan_values = np.array([x for x in values if not pd.isnull(x)])
 

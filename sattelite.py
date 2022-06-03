@@ -93,6 +93,80 @@ class Sattelite():
 
         return sat_data
 
+    def import_explorer_plasma(self, filename):
+        month = {
+            'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6, 'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
+        }
+        data = []
+        with open(DATA_DIR + "\%s"%filename) as f:
+            for line in f.readlines():
+                line = line.split()
+                minute = int(line[5])
+                #print(line)
+
+                if minute==60:
+                    minute = 59
+                try:
+                    dt = datetime.datetime(int(line[0]), int(month[line[2]]), int(line[3]), int(line[4]), minute)
+                    ion_density = float(line[7])
+                    aberrated_flow_speed = int(line[8])
+                except Exception as e:
+                    print(e)
+                data.append([dt, ion_density, aberrated_flow_speed])
+        return np.array(data)
+
+    def import_omni_data(self, filename, start_line):
+        """
+
+        Selected parameters:
+        3 Scalar B, nT
+        4 BX, nT (GSE, GSM)
+        5 BY, nT (GSM)
+        6 BZ, nT (GSM)
+        7 SW Plasma Temperature, K
+        8 SW Proton Density, N/cm^3
+        9 SW Plasma Speed, km/s
+        10 Flow pressure
+        11 E elecrtric field
+        12 Plasma Beta
+        """
+        data = []
+        error_list = [999.9, 9999999., 99.99, 9999.0, 999.99]
+        with open(DATA_DIR + "\%s" % filename) as f:
+            for i, line in enumerate(f.readlines()):
+                if i >= start_line-1:
+                    line = line.split()
+                    dt = datetime.datetime.strptime('%i-%iT%i:00:00' % (int(line[0]), int(line[1]), int(line[2])),'%Y-%jT%H:%M:%S')
+                    dx = float(line[4])
+                    if dx in error_list:
+                        dx = np.nan
+                    dy = float(line[5])
+                    if dy in error_list:
+                        dy = np.nan
+                    dz = float(line[6])
+                    if dz in error_list:
+                        dz = np.nan
+                    sw_pt = float(line[7])
+                    if sw_pt in error_list:
+                        sw_pt = np.nan
+                    sw_pd = float(line[8])
+                    if sw_pd in error_list:
+                        sw_pd = np.nan
+                    sw_ps = float(line[9])
+                    if sw_ps in error_list:
+                        sw_ps = np.nan
+                    fp = float(line[10])
+                    if fp in error_list:
+                        fp = np.nan
+                    ef = float(line[11])
+                    if ef in error_list:
+                        ef = np.nan
+                    pb = float(line[12])
+                    if pb in error_list:
+                        pb = np.nan
+                    data.append([dt, dx, dy, dz, sw_pt, sw_pd, sw_ps, fp, ef, pb])
+        return np.array(data)
+
     def import_kp(self, filename):
         Kp_indices = {
             '0o': 0., '0+': 0.33, '1-': 0.67, '1o': 1.00, '1+': 1.33, '2-': 1.67, '2o': 2.00, '2+': 2.33, '3-': 2.67,
@@ -246,7 +320,7 @@ class Sattelite():
         for i, dt in enumerate(time_array):
             deltas = np.abs(dt - sat_full_time)
             #print(deltas)
-            if np.min(deltas) <= datetime.timedelta(minutes=60):
+            if np.min(deltas) < datetime.timedelta(minutes=60):
                 idx_array.append([i, np.argmin(deltas)])
                 #idx_array.append(i)
         return np.array(idx_array).astype(int) # [time_array_idx(i), sat_fill_time_idx(i)]

@@ -61,6 +61,10 @@ def get_proj_image(sat_label, sat_datetime, sat_pos, sat_value, legend_label,
     if cut_swarm_value_bool:
         if proj_extend_loc is not None:
             print('cut swarm_pos manual by proj_extend_loc')
+            """
+            loc:lat{proj_extend_loc[2]:proj_extend_loc[3]},
+                lon{proj_extend_loc[0]:proj_extend_loc[1]} 
+            """
             poly_loc = [[proj_extend_loc[1],proj_extend_loc[2],], [proj_extend_loc[1],proj_extend_loc[3],],
                         [proj_extend_loc[0],proj_extend_loc[3],], [proj_extend_loc[0],proj_extend_loc[2],]]
             p_in_p, poly = get_points_in_poly(sat_pos[:, :2], poly_loc, proj_type)

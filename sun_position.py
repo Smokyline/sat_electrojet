@@ -27,7 +27,7 @@ def sun_pos(dt=None):
     if dt is None:
         dt = datetime.utcnow()
 
-    axial_tilt = 23.59
+    axial_tilt = 23.4
     ref_solstice = datetime(2016, 6, 21, 22, 22)
     days_per_year = 365.2425
     seconds_per_day = 24 * 60 * 60.0

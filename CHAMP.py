@@ -38,13 +38,14 @@ print('delta:', sat_data[1, 0]-sat_data[0, 0])
 
 # select time
 #sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 0, 00), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 12, 00))]
+#sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 8, 0, 00), sat_data[:, 0] <= datetime.datetime(2007, 12, 8, 12, 00))]
 #sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 6, 0), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 8, 0))]   # 6 utc  -  8 utc
+
 #sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 6, 27), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 6, 44))]  # 1st
 #sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 4, 55), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 5, 14))]  # 2nd
-sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 7, 58), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 8, 15))]  # 3
+#sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 7, 58), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 8, 15))]  # 3
+sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 11, 00), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 11, 20))]  # 4
 
-#sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 7, 56), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 8, 5))]  # 7
-#sat_data = sat_data[np.logical_and(sat_data[:, 0] >= datetime.datetime(2007, 12, 10, 3, 23), sat_data[:, 0] <= datetime.datetime(2007, 12, 10, 3, 29))]
 
 sat_datetime = sat_data[:, 0]
 sat_pos = sat_data[:, 1:4]
@@ -52,11 +53,11 @@ sat_value = sat_data[:, 4:]
 sat_value = chaos.get_sat_and_chaos_diff(sat_datetime, sat_pos, sat_value)
 
 
-sat_label = 'CHAMP_dN'
-channel = 0     # N=0, E=1, C=2, F=3
+sat_label = 'CHAMP_fac'
+channel = 0    # N=0, E=1, C=2, F=3
 
-sat_value = sat_value[:, channel]   # !!!!!!!!!!
-#sat_value = sat.calc_FAC(sat_datetime, sat_pos, sat_value)    # !!!!!!!!!!!!!!!!!!!!
+#sat_value = sat_value[:, channel]   # !!!!!!!!!!
+sat_value = sat.calc_FAC(sat_datetime, sat_pos, sat_value)    # !!!!!!!!!!!!!!!!!!!!
 
 fig, ax = plt.subplots()
 #ax.plot(sat_value)

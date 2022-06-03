@@ -53,6 +53,7 @@ class CHAOS7():
         :return: [[dN, dE, dC],[]]
         """
 
+
         sat_theta = 90. - sat_pos[:, 0]  # colat deg
         sat_phi = sat_pos[:, 1]  # deg
         sat_radius = sat_pos[:, 2] + R_REF  # radius from altitude in km
@@ -62,6 +63,7 @@ class CHAOS7():
         sat_time = sat_time / (1e3 * 3600 * 24) - 730485  # time in modified Julian date 2000
 
         B_radius, B_theta, B_phi = self.chaos7_mat_model(sat_time, sat_radius, sat_theta, sat_phi)
+        print(np.array([B_theta, B_phi, B_radius]).T)
         F_chaos = self.calc_F(B_radius, B_theta, B_phi)
 
         dN = sat_N + B_theta
