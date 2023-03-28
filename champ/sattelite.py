@@ -1,5 +1,6 @@
 import datetime
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from tools import *
@@ -10,6 +11,8 @@ import igrf
 import tqdm
 import codecs
 from chaos7_model.chaos_model import CHAOS7
+from sun_position import sun_pos
+from scipy.interpolate import griddata
 
 class Sattelite():
     def __init__(self, dt_from, dt_to):
@@ -211,6 +214,7 @@ class Sattelite():
         igrf_model = np.empty((0, 4))
         for i in tqdm.tqdm(range(len(geodetic_coords)), desc="igrf13 model"):
             glat, glon, alt_km = geodetic_coords[i, 0], geodetic_coords[i, 1], geodetic_coords[i, 2]
+            print(np.array([date[i], glat, glon, alt_km]).T)
             model = igrf.igrf(date[i], glat, glon, alt_km)
             igrf_model = np.append(igrf_model, [[float(model.north), float(model.east), float(model.down),
                                                  float(model.total)]], axis=0)
@@ -235,13 +239,18 @@ class Sattelite():
         else:
             return geodetic_latlonR
 
+    def calc_circle_lenght(self, latlonR1, latlonR2):
+        phi1, r1 = latlonR1[1], latlonR1[2]
+        phi2, r2 = latlonR2[1], latlonR2[2]
+        mean_r = (r1 + r2) / 2
+        mean_r = (mean_r * 1000) + 6371008  # m to center of Earth
+        phi = np.abs(phi1 - phi2)
+
+        arclenght = 2 * np.pi * mean_r * (phi / 360)
+        return arclenght
     def calc_FAC(self, sat_datetime, sat_pos, sat_value):
         mu = 4*np.pi * 10e-7    # H/m is the magnetic permeability of free space
-        #mu = 1    # H/m is the magnetic permeability of free space
-        """cart_sat_pos = np.empty((0, 3))
-        for latlonR in sat_pos:
-            x, y, z = spher_to_cart(latlonR[0], latlonR[1])     # R in m
-            cart_sat_pos = np.append(cart_sat_pos, [[x, y, z]], axis=0)"""
+        #print(sat_pos)
         sat_N, sat_E, sat_C = sat_value[:, 0], sat_value[:, 1], sat_value[:, 2]
         chaos_B = self.chaos7.get_chaos_components(dt=sat_datetime, lat=sat_pos[:, 0], lon=sat_pos[:, 1], r=sat_pos[:, 2])      # N, E, C, F
 
@@ -252,15 +261,143 @@ class Sattelite():
                 if np.isnan(bx) or np.isnan(by) or np.isnan(bz) or np.isnan(sat_E[i + 1]):
                     jFAC = np.nan
                 else:
-                    dx = calc_circle_lenght(sat_pos[i], sat_pos[i+1])
-                    jz = (1 / mu) * ((sat_E[i + 1] - by) / dx) / 1000  # deriv   /1000 nano to micro
+                    dx = self.calc_circle_lenght(sat_pos[i], sat_pos[i+1])
+                    jz = (1 / mu) * ((sat_E[i + 1] - by) / dx) / 100  # deriv   /1000 nano to micro
                     #F = np.sqrt(bx ** 2 + by ** 2 + bz ** 2)
-                    sinI = chaos_B[i, 2] / chaos_B[i, 3]     # bz/F
-                    jFAC = -(jz / sinI)
+                    #sinI = chaos_B[i, 2] / chaos_B[i, 3]     # bz/F
+                    sinI = chaos_B[i, 2] / chaos_B[i, 3]  # bz/F     # bz/F
+                    jFAC = jz / sinI
             else:
                 jFAC = FAC[i-1]
             FAC = np.append(FAC, jFAC)
         return FAC
+
+    def calc_jz_of_vortex(self, vortex_array, sat_dt, sat_pos):
+        LON, LAT, vX, vY = vortex_array
+        vLON = np.rad2deg(LON)
+        vLON = (vLON + 180) % 360 - 180  # 0 360 to -180 180
+        vLAT = np.rad2deg(LAT)
+
+        #midnight_lat, midnight_lon = sun_pos(sat_dt[0])
+        #vLON += midnight_lon
+
+        #sat_dt_avg, sat_pos_avg = self.data_averaging(sat_dt, sat_pos, delta=15)
+
+
+        vLatLon_idx = np.empty((0, 2)).astype(int)
+        vLatLon = np.empty((0, 2))
+        vXxY = np.empty((0, 2))
+        for i in range(LAT.shape[0]):
+            for j in range(LON.shape[1]):
+                vLatLon = np.append(vLatLon, [[vLAT[i, j], vLON[i, j]]], axis=0)
+                vLatLon_idx = np.append(vLatLon_idx, [[i, j]], axis=0)
+                #print([vX[i, j], vY[i, j]])
+                vXxY = np.append(vXxY, [[vX[i, j, 3], vY[i, j, 3]]], axis=0)
+
+
+
+        start_dt = sat_dt[0]
+        dk_idx = 0
+        track_X = []
+        track_Y = []
+        for i, (lat, lon, r) in enumerate(sat_pos):     # создаем массив векторов вдоль пролета спутника
+            current_dt = sat_dt[i]
+            delta = np.abs(current_dt-start_dt)
+            if delta > datetime.timedelta(seconds=60) and dk_idx + 1 < vX.shape[2]:
+                dk_idx += 1
+                start_dt = current_dt
+
+            vX_dk = np.cos(LON) * (1 * vX[:, :, dk_idx]) + np.sin(LON) * (1 * vY[:, :, dk_idx])
+            vY_dk = np.sin(LON) * (1 * vX[:, :, dk_idx]) - np.cos(LON) * (1 * vY[:, :, dk_idx])
+
+            """u_src_crs = -vX[:, :, dk_idx] / np.cos(vLAT / 180 * np.pi)
+            v_src_crs = vY[:, :, dk_idx]
+            magnitude = np.sqrt(vX[:, :, dk_idx] ** 2 + vY[:, :, dk_idx] ** 2)
+            magn_src_crs = np.sqrt(u_src_crs ** 2 + v_src_crs ** 2)
+            vX_dk = u_src_crs * magnitude/magn_src_crs
+            vY_dk = v_src_crs * magnitude/magn_src_crs"""
+            #vX_dk = vX[:, :, dk_idx]
+            #vY_dk = -vY[:, :, dk_idx]
+
+
+            eucl_range = eucl_range_foo([lat, lon], vLatLon)
+            if np.min(eucl_range) < 5:
+                idx_near = np.argmin(eucl_range)
+                (i_close, j_close) = np.array(vLatLon_idx[idx_near]).astype(int)
+                track_X.append(vX_dk[i_close, j_close])
+                track_Y.append(vY_dk[i_close, j_close])
+            else:
+                track_X.append(np.nan)
+                track_Y.append(np.nan)
+        mu = 4 * np.pi * 10e-7  # H/m is the magnetic permeability of free space
+        vortex_jz = []
+        for i in range(len(track_X)):
+            if i < len(track_X) - 1:
+                if np.isnan(track_Y[i]) or np.isnan(track_Y[i + 1]):
+                    jz = np.nan
+                elif track_Y[i + 1] - track_Y[i] == 0 and i > 0:
+                    jz = vortex_jz[i - 1]
+                else:
+                    dx = self.calc_circle_lenght(sat_pos[i], sat_pos[i + 1])
+                    jz = (1 / mu) * ((track_Y[i + 1] - track_Y[i]) / dx) / 100  # deriv   /1000 nano to micro
+
+            else:
+                jz = vortex_jz[i - 1]
+            vortex_jz.append(jz)
+
+        return np.array(vortex_jz)
+
+    def data_averaging(self,sat_datetime, swarm_position , delta):
+        #warnings.simplefilter("ignore", category=RuntimeWarning)
+        """сжимание секундных данных до delta шага"""
+        # fac2 = (Y, X, R), dt, (fac2)
+        # vector, measure mu, fac, chaos = (Y, X, R), dt, (N, E, C)
+        swarm_liter, swarm_position, swarm_date, swarm_time, swarm_values = respond
+
+        N = len(swarm_values)
+        if fac2_mod:
+            idx999 = np.where(swarm_values >= 999)[0]
+            # respond = respond[idx999]
+            swarm_values[idx999] = np.nan
+            redu_value = np.empty((0, 1)).astype(float)
+        else:
+            redu_value = np.empty((0, 4)).astype(float)
+
+        if delta <= 1:
+            window = 1
+        else:
+            window = int(delta / 2)
+
+        redu_position = np.empty((0, 3)).astype(float)
+        redu_date = np.empty((0, 1)).astype(str)
+        redu_time = np.empty((0, 1)).astype(str)
+        st_idx = 0
+        while st_idx < N:
+            if st_idx != 0:
+                left_idx = st_idx - window
+            else:
+                left_idx = 0
+            right_idx = st_idx + window
+            # delta_resp = respond[left_idx:right_idx]
+            tick_pos, tick_date, tick_time = swarm_position[left_idx], swarm_date[left_idx], swarm_time[left_idx]
+
+            if fac2_mod:
+                tick_value = [np.array(np.nanmean(swarm_values[left_idx:right_idx]))]
+            else:
+                n = np.mean(swarm_values[left_idx:right_idx, 0])
+                e = np.mean(swarm_values[left_idx:right_idx, 1])
+                c = np.mean(swarm_values[left_idx:right_idx, 2])
+                f = np.mean(swarm_values[left_idx:right_idx, 3])
+                tick_value = np.array([n, e, c, f])
+            redu_position = np.append(redu_position, [tick_pos], axis=0)
+            redu_date = np.append(redu_date, tick_date)
+            redu_time = np.append(redu_time, tick_time)
+            redu_value = np.append(redu_value, [tick_value], axis=0)
+
+            st_idx += delta
+        sw_set = [swarm_liter, redu_position, redu_date, redu_time, redu_value]
+        print()
+        return sw_set
 
     def get_ThetaPhi_gsm_and_DayNight_idx(self, theta, phi, mjd2000_time, reference='gsm'):
         """

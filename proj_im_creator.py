@@ -7,7 +7,8 @@ import numpy as np
 def get_proj_image(sat_label, sat_datetime, sat_pos, sat_value, legend_label,
                    sat_poly_loc=None, sat_rad_loc=None, sat_rad_deg=5, proj_type='miller',
                    draw_IGRFvector_diff=False, draw_CHAOSvector_diff=False,
-                   mag_grid_coord=False, lt_grid_coord=False, central_lon=None, obs=None):
+                   mag_grid_coord=False, lt_grid_coord=False, central_lon=None, obs=None,
+                   vortex_field=None):
 
     ax_label = fr'{sat_label} {sat_datetime[0]} -- {sat_datetime[-1]} '
 
@@ -137,16 +138,22 @@ def get_proj_image(sat_label, sat_datetime, sat_pos, sat_value, legend_label,
     # если полигона нет - отрисовка всех (swarm_pos_in_poly = swarm_pos)
     if STATUS == 1:
 
-        sword.draw_swarm_scatter(sat_pos_in_poly, sat_value_in_poly, sat_datetime_in_poly, custom_label=legend_label,
-                                 annotate=False)  # отрисовка значение точек на орбите
+        sword.draw_swarm_value_amplitude(sat_pos_in_poly, sat_value_in_poly, sat_datetime_in_poly, custom_label=legend_label,
+                                         annotate=False)  # отрисовка значение точек на орбите
+
         if draw_CHAOSvector_diff or draw_IGRFvector_diff:
             sword.draw_vector(sat_pos_in_poly, B=vector_components)
+        # отрисовка
+        if vortex_field is not None:
+            sword.draw_vortex(vortex_field, date=sat_datetime[0])
 
-    # конвертация figure matplotlib в PIL image для stacker.py
+
     if cut_swarm_value_bool == True or proj_extend_loc is not None:
         sword.set_axis_label(ax_label, zoom_axis=True)
     else:
         sword.set_axis_label(ax_label)
+
+    # конвертация figure matplotlib в PIL image для stacker.py
 
     if STATUS == 1:
         out = sword.fig_to_PIL_image()
@@ -237,14 +244,17 @@ def get_plot_im(swarm_sets, labels, auroral, channel, delta, measure_mu, ground_
     return (status, out)
 
 
-def get_single_plot(sat_label, sat_time, sat_pos, sat_value):
+def get_single_plot(sat_label, sat_time, sat_pos, sat_value, vortex_jz=None):
     sword = SWORD()
     date_list, time_list = [], []
     for dt in sat_time:
         date_list.append(str(dt.date()))
         time_list.append('%s:%s:%s' % (dt.hour, dt.minute, dt.second))
     draw_list = [[sat_label, date_list, time_list, sat_value, sat_pos]]
-    sword.draw_plot(draw_list, auroral_list=[])
+    if vortex_jz is not None:
+        sword.draw_plot(draw_list, vortex_jz)
+    else:
+        sword.draw_plot(draw_list)
     out = sword.fig_to_PIL_image()
 
     status = 1

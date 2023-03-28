@@ -1,10 +1,7 @@
-from sattelite import Sattelite
+from champ.sattelite import Sattelite
 import codecs
 from settings import DATA_DIR
-import numpy as np
-import datetime
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 from tools import *
 
 

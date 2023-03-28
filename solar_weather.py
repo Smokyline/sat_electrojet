@@ -1,15 +1,10 @@
 import datetime
 from matplotlib.lines import Line2D
-from sattelite import Sattelite
+from champ.sattelite import Sattelite
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import matplotlib.dates as mdates
 import sys
 import matplotlib.colors as mcolors
-import matplotlib.ticker as ticker
-from dateutil import tz
-from tools import get_local_time
 from settings import RESULT_DIR
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -32,12 +27,14 @@ Selected parameters:
 """
 dt_from, dt_to = datetime.datetime(1970, 3, 6, 0, 0, 0), datetime.datetime(1970, 3, 11, 0, 0, 0)
 
-while dt_from < dt_to:
+"""while dt_from < dt_to:
     dt1 = dt_from
     dt2 = dt_from + datetime.timedelta(hours=12)
-    print(dt1, dt2)
+    print(dt1, dt2)"""
+for dt1, dt2 in zip([dt_from], [dt_to]):
+
     idx_start, idx_stop = sat.get_start_stop_idx(time_array=OMNI_DATA_FULL[:, 0], dt_from=dt1, dt_to=dt2)
-    filename = 'OMNI %s - %s' % (dt1.strftime('%H_%M %Y-%m-%d'), dt2.strftime('%H_%M %Y-%m-%d'))
+    filename = 'OMNI E FIELD %s - %s' % (dt1.strftime('%H_%M %Y-%m-%d'), dt2.strftime('%H_%M %Y-%m-%d'))
 
     OMNI_DATA = OMNI_DATA_FULL[idx_start:idx_stop]
     #datetime_array = pd.date_range(dt_from, dt_to, freq='h')
@@ -60,49 +57,68 @@ while dt_from < dt_to:
     PLASMA_BETA = {'data': np.array([[dt, x] for dt, x in zip(OMNI_DATA[:, 0], OMNI_DATA[:, 9])]),
                    'title': 'Plasma_beta'}
 
-    fig, ax = plt.subplots(figsize=(16, 10))
+    #fig, axs = plt.subplots(3, 1, figsize=(16, 10))
+    #fig, axs = plt.subplots(3, sharex=True, sharey=True, hspace=0)
+    fig = plt.figure(figsize=(15, 11))
+    #fig.subtitle(filename)
 
     c = mcolors.ColorConverter().to_rgb
-
     legend = {
         'BX, nT': c('black'), 'SW_plasma_temp, K': c('#0B2DD6'),
         'Flow_pressure, nPa': c('#01E1F0'), 'BY, nT': c('#00D62E'),
-        'SW_proton_dens, N/cm^3': c('#FABE00'), 'elecrtric_field, mV/m': c('#FFFF0D'),
+        #'SW_proton_dens, N/cm^3': c('#FABE00'), 'elecrtric_field, mV/m': c('#FFFF0D'),
+        'SW_proton_dens, N/cm^3': c('#FABE00'), 'elecrtric_field, mV/m': c('black'),
         'BZ, nT': c('#FA4200'), 'SW_plasma_speed, km/s': c('#D60192'),
         'Plasma_beta': c('#8811F0')
     }
     custom_line_legend = []
     custom_title_legend = []
-    for sw_array in [BX, BY, BZ, PLASMA_TEMP, PROTON_DENS, PLASMA_SPEED, FLOW_PRESSURE, ELECTRIC_FIELD, PLASMA_BETA]:
+    #for sw_array in [BX, BY, BZ, PLASMA_TEMP, PROTON_DENS, PLASMA_SPEED, FLOW_PRESSURE, ELECTRIC_FIELD, PLASMA_BETA]:
+    #for ax_i, sw_array in enumerate([BX, BY, BZ]):
+    #for ax_i, sw_array in enumerate([PLASMA_TEMP, PROTON_DENS, PLASMA_SPEED]):
+    for ax_i, sw_array in enumerate([FLOW_PRESSURE, ELECTRIC_FIELD, PLASMA_BETA]):
+        temp = 310 + ax_i+1
+        ax = plt.subplot(temp)
+        plt.subplots_adjust(hspace=.001)
+        #temp = tic.MaxNLocator(3)
+        #ax.yaxis.set_major_locator(temp)
+        #ax.set_xticklabels(())
+        #ax.title.set_visible(False)
+        #ax.label_outer()
+        if ax_i==0:
+            ax.set_title(filename)
         if 'SW_plasma_temp' in sw_array['title']:
-            ax1 = ax.twinx()
-            ax1.spines['right'].set_position(('axes', 1.00))
-            ax1.set_ylabel(sw_array['title'])
-            ax1.plot(sw_array['data'][:, 0], sw_array['data'][:, 1], label=sw_array['title'],
+            ax.set_ylabel(sw_array['title'])
+            ax.plot(sw_array['data'][:, 0], sw_array['data'][:, 1], label=sw_array['title'],
                      c=legend[sw_array['title']])
         elif 'SW_plasma_speed' in sw_array['title']:
-            ax1 = ax.twinx()
-            ax1.spines['right'].set_position(('axes', 1.07))
-            ax1.set_ylabel(sw_array['title'])
-            ax1.plot(sw_array['data'][:, 0], sw_array['data'][:, 1], label=sw_array['title'],
+            ax.set_ylabel(sw_array['title'])
+            ax.plot(sw_array['data'][:, 0], sw_array['data'][:, 1], label=sw_array['title'],
                      c=legend[sw_array['title']])
         else:
             ax.plot(sw_array['data'][:, 0], sw_array['data'][:, 1], label=sw_array['title'],
                     c=legend[sw_array['title']])
-        custom_line_legend.append(Line2D([0], [0], color=legend[sw_array['title']], lw=4))
-        custom_title_legend.append(sw_array['title'])
+        ax.set_xticks(OMNI_DATA[::3, 0])
+        if ax_i==2:
+            ax.set_xticklabels([x.strftime('%m/%d %H:%M UT') for x in OMNI_DATA[::3, 0]], rotation=90)
+        else:
+            ax.set_xticklabels(['' for x in OMNI_DATA[::3, 0]], rotation=40)
 
-    plt.legend(custom_line_legend, custom_title_legend)
-    # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M %Y-%m-%d'))
-    # plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=3))
-    # plt.gca().xaxis.set_tick_params(rotation=35)
-    # print(plt.gca().xaxis.get_majorticklabels())
-    ax.set_xticks(OMNI_DATA[:, 0])
-    ax.set_xticklabels([x.strftime('%H:%M %Y-%m-%d') for x in OMNI_DATA[:, 0]], rotation=40)
-    # ax.xaxis.set_major_locator(ticker.MultipleLocator(0.3))
-    ax.grid()
+        ax.grid()
+        ax.set(ylabel= sw_array['title'])
+        ax.legend([Line2D([0], [0], color=legend[sw_array['title']], lw=4)], [sw_array['title']])
+
+        #custom_line_legend.append(Line2D([0], [0], color=legend[sw_array['title']], lw=4))
+        #custom_title_legend.append(sw_array['title'])
+
+    #plt.legend(custom_line_legend, custom_title_legend)
+
+    #ax.set_xticks(OMNI_DATA[::3, 0])
+    #ax.set_xticklabels([x.strftime('%H:%M %Y-%m-%d') for x in OMNI_DATA[::3, 0]], rotation=40)
+    #ax.grid()
+
     # plt.show()
-    plt.title(filename)
+    #plt.title(filename)
     plt.savefig(RESULT_DIR + '\%s.jpg' % filename, format='jpeg', dpi=400)
     plt.close()
     dt_from = dt2

@@ -89,14 +89,15 @@ def example2():
     print(model)
 
     cdf_file = cdflib.CDF(
-        'C:\\Users\\ivan\\workspace\\teslaswarm\\chaos7_model\\data\\SW_OPER_MAGA_LR_1B_20180801T000000_20180801T235959_PT15S.cdf', 'r')
+        #'C:\\Users\\ivan\\workspace\\teslaswarm\\chaos7_model\\data\\SW_OPER_MAGA_LR_1B_20180801T000000_20180801T235959_PT15S.cdf', 'r')
+        'D:\workspace\sat_electrojet\chaos7_model\data\SW_OPER_MAGA_LR_1B_20180801T000000_20180801T235959_PT15S.cdf', 'r')
     # print(cdf_file.cdf_info())  # print cdf info/contents
 
     radius = cdf_file.varget('Radius') / 1000  # km     == 6805.59728
     theta = 90. - cdf_file.varget('Latitude')  # 90... -90 to colat deg 180... 0
     phi = cdf_file.varget('Longitude')  # deg
-
-    print(cdf_file.varget('Latitude'), np.max(cdf_file.varget('Latitude')), np.min(cdf_file.varget('Latitude')))
+    print(radius)
+    #print(cdf_file.varget('Latitude'), np.max(cdf_file.varget('Latitude')), np.min(cdf_file.varget('Latitude')))
 
 
 
@@ -117,9 +118,7 @@ def example2():
     # compute field strength and plot together with data
     F = np.sqrt(B_radius**2 + B_theta**2 + B_phi**2)
 
-    for n, e, x, y in zip(cdf_file.varget('N'), cdf_file.varget('E'), B_theta, B_phi):
-        print('sat_N:%.2f chaos_N:%.2f\nsat_E:%.2f chaos_E:%.2f\n\n' % (n, x, e, y))
-    print('RMSE of F: {:.5f} nT'.format(np.std(F-F_swarm)))
+    print(F)
 
     plt.scatter(theta_gsm[index_day], F_swarm[index_day]-F[index_day],
                 s=0.5, c='r', label='dayside')

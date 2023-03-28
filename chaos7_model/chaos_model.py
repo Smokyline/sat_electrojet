@@ -65,10 +65,11 @@ class CHAOS7():
         B_radius, B_theta, B_phi = self.chaos7_mat_model(sat_time, sat_radius, sat_theta, sat_phi)
         print(np.array([B_theta, B_phi, B_radius]).T)
         F_chaos = self.calc_F(B_radius, B_theta, B_phi)
-
-        dN = sat_N + B_theta
+        B_theta = B_theta * -1  # switch chaos vector coord
+        B_radius = B_radius * -1  # switch chaos vector coord
+        dN = sat_N - B_theta
         dE = sat_E - B_phi
-        dC = sat_C + B_radius
+        dC = sat_C - B_radius
         dF = sat_F - F_chaos
 
 
@@ -94,8 +95,10 @@ class CHAOS7():
         time = time / (1e3 * 3600 * 24) - 730485  # time in modified Julian date 2000
 
         B_radius, B_theta, B_phi = self.chaos7_mat_model(time, radius, theta, phi)
+        B_theta = B_theta * -1  # switch chaos vector coord
+        B_radius = B_radius * -1  # switch chaos vector coord
         F = self.calc_F(B_radius, B_theta, B_phi)
-        return np.array([B_theta, phi, radius, F]).T
+        return np.array([B_theta, B_phi, B_radius, F]).T
 
     """
         def get_coef(self):

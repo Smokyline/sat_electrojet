@@ -135,7 +135,7 @@ class SWORD():
                #plt.gca().xaxis.set_major_locator(plt.NullLocator())
         #plt.gca().yaxis.set_major_locator(plt.NullLocator())
 
-    def draw_plot(self, draw_list, auroral_list, delta=1, draw_station=None):
+    def draw_plot(self, draw_list, vortex_jz=None, delta=1, draw_station=None):
         # long_set
         """short_set, long_set = False, False
         if len(draw_list) == 1:
@@ -236,10 +236,23 @@ class SWORD():
             right_axes = []
             if draw_station is not None:
                 right_axes.append(host.twinx)
-            if len(auroral_list) > 0:
+            if vortex_jz is not None:
                 right_axes.append(host.twinx)
+                #host.plot(np.arange(len(time_list)), vortex_jz, c='g', label='vortex Jz', alpha=0.7)
+                ax4 = host.twinx()
+                ax4.set_ylabel("vortex Jz, %sA/m²" % chr(956))
+                ax4.plot(np.arange(len(vortex_jz)), vortex_jz, c='b',
+                         label='vortex Jz', lw=1.5, alpha=0.75)
+                ax4.legend(loc=2)
+                ax4.grid(linestyle='--')
+                #ax4.set_zorder(host.get_zorder() + 1)
+                ymin1, ymax1 = host.get_ylim()
+                ymin2, ymax2 = ax4.get_ylim()
+                ylim1 = np.max((np.abs(ymin1), np.abs(ymax1)))
+                ylim2 = np.max((np.abs(ymin2), np.abs(ymax2)))
 
-
+                host.set_ylim(-ylim1, ylim1)
+                ax4.set_ylim(-ylim2, ylim2)
 
             if 'fac' in label:
                 label += ' %sA/m²' % chr(956)
@@ -322,7 +335,7 @@ class SWORD():
                         print(e)
                     last_point = point_time
 
-    def draw_swarm_scatter(self, points, values, points_time, custom_label=None, annotate=False):
+    def draw_swarm_value_amplitude(self, points, values, points_time, custom_label=None, annotate=False):
         values = np.array(values).astype(np.float)
 
         X, Y, Z = points[:, 1], points[:, 0], points[:, 2]
@@ -360,22 +373,26 @@ class SWORD():
         #cmap_args = self.draw_colorbar(values=values, cmap=cmap, y_label=unit, cb_type=cb_type)
         #interpolate_values = pd.DataFrame(np.array(values), dtype='float32').interpolate().to_numpy().T[0]
         cmap_args, cb = self.draw_colorbar(values=nonnan_values, cmap=cmap, label=unit, cb_type=cb_type)
-        m = cm.ScalarMappable(norm=cmap_args['norm'], cmap=cmap_args['cmap'])
+        cmap = cm.ScalarMappable(norm=cmap_args['norm'], cmap=cmap_args['cmap'])
+
         #s = np.power(len(values), -1/16) * 300
         #s = np.power(len(values), -1/4) * 300
-
         if custom_label == 'fac':
             line_mp_lenght = 1e6
+            value_max = 10
+
         else:
-            line_mp_lenght = 1e5
+            line_mp_lenght = 3e5
+            value_max = 100
+
         #self.ax.scatter(points[:, 1], points[:, 0], s=s, c=values, **cmap_args, transform=self.transform, edgecolors='k', lw=0.3)
         #for v in values:
         #    if v is not np.nan:
 
         #self.ax.scatter(X, Y, s=s, c=values, **cmap_args, transform=self.transform, alpha=.9)
 
-        value_max = np.max([x for x in values if not np.isnan(x)])
-
+        #value_max = np.max([x for x in values if not np.isnan(x)])
+        #value_max = 100
         for k in range(len(X)):
             if k < len(X) - 1:
                 x1, y1, z1 = X[k], Y[k], Z[k]
@@ -389,6 +406,7 @@ class SWORD():
 
             p1 = np.array((x1, y1))
             a1 = values[k]/value_max * line_mp_lenght
+
             a2 = -a1
             l1 = np.array([y2 - y1, x1 - x2])
             l1_length = np.sqrt(l1[0] ** 2 + l1[1] ** 2)
@@ -399,10 +417,9 @@ class SWORD():
             c2 = p1 + l3
 
             line = Line2D([c1[0], x1, c2[0]],
-                          [c1[1], y1, c2[1]], color=m.to_rgba(values[k]), alpha=.75, zorder=4)
+                          [c1[1], y1, c2[1]], color=cmap.to_rgba(values[k]), alpha=.75, zorder=4)
                           #[c1[1], y1, c2[1]], transform=transf, color='k', alpha=.9)
             self.ax.add_line(line, )
-
 
 
         # solar coords
@@ -505,20 +522,25 @@ class SWORD():
             #levels = MaxNLocator(nbins=10).tick_values(values.min(), values.max())
             #norm = BoundaryNorm(levels, cmap.N, clip=True)
             vmin, v_max = values.min(), values.max()
-            values = values[np.where(values > vmin)]
+            #values = values[np.where(values > vmin)]
             if np.abs(values.min()) > np.abs(values.max()):
                 vmin, vmax = -1 * np.abs(values.min()), np.abs(values.min())
             else:
                 vmin, vmax = -1 * np.abs(values.max()), np.abs(values.max())
-            norm = plt.Normalize(vmin=vmin, vmax=vmax)
 
             c = mcolors.ColorConverter().to_rgb
             #cmap = make_colormap([c('blue'), 0.2, c('blue'), c('#6AFF00'),0.495, c('#6AFF00'), c('red'), 0.8, c('red')])
 
-            if ('FAC' in label) and vmax > 10:
-                bounds = [vmin, -5.0, -4., -3., -2., -1., 0, 1., 2., 3., 4., 5., vmax]
-            elif ('d' in label) and vmax > 50:
-                bounds = [vmin, -50.0, -40., -30., -20., -10., 0, 10., 20., 30., 40., 50., vmax]
+            if ('FAC' in label):
+                if vmax < 5:
+                    bounds = [-6, -5.0, -4., -3., -2., -1., 0, 1., 2., 3., 4., 5., 6]
+                else:
+                    bounds = [vmin, -5.0, -4., -3., -2., -1., 0, 1., 2., 3., 4., 5., vmax]
+            elif ('d' in label):
+                if vmax < 50:
+                    bounds = [-100, -50.0, -40., -30., -20., -10., 0, 10., 20., 30., 40., 50., 100]
+                else:
+                    bounds = [vmin, -50.0, -40., -30., -20., -10., 0, 10., 20., 30., 40., 50., vmax]
             else:
                 delta = vmax/5
                 bounds = [x for x in np.arange(vmin, vmax+delta, delta)]
@@ -548,17 +570,18 @@ class SWORD():
             cm = plt.cm.ScalarMappable(cmap='jet', norm=norm)
             # cm = plt.cm.ScalarMappable(cmap=cmap)
             cmap_args = dict(cmap='jet', norm=norm)
-
-
-
         cm._A = []
-
         rotation, orientation, pad, label_pad = 0, 'horizontal', 0.01, None
 
             #rotation, orientation, pad, label_pad = 270, 'vertical', 0.05, None
         #   https://stackoverflow.com/questions/15908371/matplotlib-colorbars-and-its-text-labels
         #cb = plt.colorbar(cm, ax=self.ax, shrink=0.4, orientation=orientation, fraction=0.1, pad=0.0025)
-        cb = plt.colorbar(cm, ax=self.ax, orientation=orientation, shrink=0.35, fraction=0.05, pad=pad)
+
+        if cb_type == 'zero_center' and ('d' in label or 'FAC' in label):
+            cb = plt.colorbar(cm, ax=self.ax, orientation=orientation, shrink=0.35, fraction=0.05, pad=pad, ticks=bounds)
+            cb.ax.set_yticklabels(bounds)
+        else:
+            cb = plt.colorbar(cm, ax=self.ax, orientation=orientation, shrink=0.35, fraction=0.05, pad=pad)
         cb.set_label(label, labelpad=label_pad, rotation=rotation)
         return cmap_args, cb
 
@@ -639,6 +662,22 @@ class SWORD():
         u = 500
         q = self.ax.quiver(X, Y, B[:, 0], B[:, 1], transform=self.transform, width=0.0008)
         self.ax.quiverkey(q, X=0.7, Y=0.99, U=u, labelpos='E', label='{N, E} vector length = %s' % u, transform=self.transform)
+
+    def draw_vortex(self, vortex_array, date):
+        LON, LAT, vX, vY = vortex_array
+        LON_deg = np.rad2deg(LON)
+        LAT_deg = np.rad2deg(LAT)
+
+        u_src_crs = -np.mean(vX, axis=2) / np.cos(LAT_deg / 180 * np.pi)
+        v_src_crs = np.mean(vY, axis=2)
+        magnitude = np.sqrt(np.mean(vX, axis=2) ** 2 + np.mean(vY, axis=2) ** 2)
+        magn_src_crs = np.sqrt(u_src_crs ** 2 + v_src_crs ** 2)
+
+        q = self.ax.quiver(LON_deg, LAT_deg, u_src_crs * magnitude / magn_src_crs, v_src_crs * magnitude / magn_src_crs,
+                  transform=self.transform, width=0.0008)
+        u = 50
+        self.ax.quiverkey(q, X=0.85, Y=0.99, U=u, labelpos='E', label='{X, Y} vector length = %s nT' % u,
+                          transform=self.transform)
 
     def draw_shapefile(self, shapefile):
         #inProj = Proj(init='laea', preserve_units=True)

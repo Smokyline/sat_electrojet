@@ -1,12 +1,11 @@
 import datetime
 
-from sattelite import Sattelite
+from champ.sattelite import Sattelite
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-import timezonefinder, pytz
+import timezonefinder
 from tzwhere import tzwhere
-from dateutil import tz
 from tools import get_local_time
 import matplotlib.gridspec as gridspec
 

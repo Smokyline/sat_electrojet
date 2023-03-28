@@ -2,10 +2,8 @@ import datetime
 import pymysql
 import warnings
 import numpy as np
-from sattelite import Sattelite
 
 from chaos7_model.chaos_model import CHAOS7
-import pandas as pd
 
 
 def data_reduction(respond, delta, fac2_mod=False):

@@ -15,6 +15,12 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry import Point
 
 
+def eucl_range_foo(xy, data):
+    eucl_array = np.zeros((1, len(data)))
+    for n, d in enumerate(xy):
+        eucl_array += (d - data[:, n]) ** 2
+    eucl_array = np.sqrt(eucl_array[0])
+    return eucl_array
 
 def decode_str_dt_param(str_dt):
     date, time = str_dt.split('T')
@@ -133,6 +139,74 @@ def swarm_egrf_vector_subtraction(swarm_pos, swarm_values_full, swarm_date):
         idx += 1
     return np.array(B)
 
+
+def rotate_NEC_vector_to_MFA(sw_lat, sw_lon, sw_rad, sw_Bvector, delta=60):
+    """
+    by shm
+    """
+
+
+    def mynorm(vec1):
+        vec2 = vec1 / np.linalg.norm(vec1)
+        return vec2
+
+    def NEC_to_XYZ(X, Y, Z, B_NEC):
+        #   перевод B из систеиы координат NEC в геоцентрическую систему координат (GEO)
+        #   X, Y, Z - координаты спутника в GEO
+        #   B_NEC - вектор B в системе NEC
+
+        ln = len(X)
+        B_XYZ = np.zeros_like(B_NEC)
+        R = np.zeros((3, 3))
+        for i in range(ln):
+            C = mynorm(-np.array([X[i], Y[i], Z[i]]))
+            E = mynorm(np.cross(C, np.array([0, 0, 1])))
+            N = np.cross(E, C)
+            R[:, 0] = N
+            R[:, 1] = E
+            R[:, 2] = C
+            B_XYZ[i, :] = np.dot(R, B_NEC[i, :])
+        return B_XYZ
+
+    def XYZ_to_MFA(X, Y, Z, B_XYZ, delta=60):
+        #   перевод B из систеиы координат GEO в систему координат (MFA)
+        #   X, Y, Z - координаты спутника в GEO
+        #   B_XYZ - вектор B в системе GEO
+
+        ln = len(X)
+        B_MFA = np.zeros_like(B_XYZ)
+        R = np.zeros((3, 3))
+        for i in range(ln):
+            i1 = np.maximum(i - delta, 0)
+            i2 = np.minimum(i + delta, ln)
+            ind = np.arange(i1, i2)
+            B0 = np.sum(B_XYZ[ind, :], axis=0)
+            r0 = np.array([X[i], Y[i], Z[i]])
+            R[0, :] = mynorm(B0)
+            R[1, :] = mynorm(np.cross(r0, B0))
+            R[2, :] = np.cross(R[0, :], R[1, :])
+            B_MFA[i, :] = np.dot(R, B_XYZ[i, :])
+
+        return B_MFA
+    Radius, Latitude, Longitude = np.ravel(sw_rad).astype(float), np.ravel(sw_lat).astype(float), np.ravel(sw_lon).astype(float)
+    B_NEC = np.array(sw_Bvector[:, :3]).astype(float)
+    #print(Radius)
+    #print(Latitude)
+    #print(Longitude)
+    #print(B_NEC)
+    #X, Y, Z = sphere_to_XYZ(Radius, Latitude, Longitude)
+    Z = Radius * np.sin(np.deg2rad(Latitude))
+    H = Radius * np.cos(np.deg2rad(Latitude))
+    X = H * np.cos(np.deg2rad(Longitude))
+    Y = H * np.sin(np.deg2rad(Longitude))
+    B_XYZ = NEC_to_XYZ(X, Y, Z, B_NEC)
+    B_MFA = XYZ_to_MFA(X, Y, Z, B_XYZ, delta=delta)
+    F_MFA = np.sqrt(B_MFA[:, 0]**2 + B_MFA[:, 1]**2 + B_MFA[:, 2]**2)
+    B_MFA = np.append(B_MFA, np.array([F_MFA]).T, axis=1)
+    #print(B_MFA)
+    print(delta, 'MFA DELTA')
+    return B_MFA
+
 #####################################################################################################################
 
 def calc_circle_lenght_latlon(latlon1, latlon2):
@@ -186,15 +260,7 @@ def calc_circle_lenght_latlon(latlon1, latlon2):
     return dist
 
 
-def calc_circle_lenght(latlonR1, latlonR2):
-    phi1, r1 = latlonR1[1], latlonR1[2]
-    phi2, r2 = latlonR2[1], latlonR2[2]
-    mean_r = (r1+r2)/2
-    mean_r = (mean_r * 1000) + 6371008  # m to center of Earth
-    phi = np.abs(phi1-phi2)
 
-    arclenght = 2 * np.pi * mean_r * (phi/360)
-    return arclenght
 
 def gc2gd(gc_xyz):
 

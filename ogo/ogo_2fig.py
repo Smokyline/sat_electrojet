@@ -1,17 +1,12 @@
 import datetime
 from settings import RESULT_DIR
-from sattelite import Sattelite
+from champ.sattelite import Sattelite
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-from dateutil import tz
 from tools import get_local_time
 import matplotlib.gridspec as gridspec
-import pandas as pd
-import math
-import time
-import matplotlib.ticker as plticker
 
 np.set_printoptions(threshold=sys.maxsize)
 
